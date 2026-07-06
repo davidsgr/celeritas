@@ -108,7 +108,7 @@ class RanluxppRngEngine
     inline CELER_FUNCTION void advance(RanluxppRngState& state);
 
     /// DATA ///
-    static constexpr int offset_ = 48;
+    static constexpr int offset_ = 32;
     ParamsRef const& params_;
     RanluxppRngState* state_;
 };
@@ -194,7 +194,7 @@ CELER_FUNCTION void RanluxppRngEngine::discard(RanluxppUInt n)
 
     n -= left;
     // Need to advance and possibly skip multiple blocks (each block is 576
-    // random bits, or 12 48-bit samples)
+    // random bits, or 18 32-bit samples)
     constexpr int n_per_state = ParamsRef::max_position / offset_;
     int skip = n / n_per_state;
 
