@@ -11,6 +11,7 @@
 #include "corecel/math/ArraySoftUnit.hh"
 #include "corecel/math/ArrayUtils.hh"
 #include "corecel/random/distribution/BernoulliDistribution.hh"
+#include "corecel/random/distribution/GenerateCanonical.hh"
 #include "corecel/random/distribution/IsotropicDistribution.hh"
 #include "corecel/random/distribution/RejectionSampler.hh"
 #include "celeritas/optical/Interaction.hh"
@@ -69,6 +70,36 @@ RayleighInteractor::RayleighInteractor(ParticleTrackView const& particle,
 template<class Engine>
 CELER_FUNCTION Interaction RayleighInteractor::operator()(Engine& rng)
 {
+    // Analytic sampling method
+    Real3 new_dir, new_pol;
+    do
+    {
+        // Compute cos(theta)
+        double A = 2 * generate_canonical<double>(rng) - 1;
+        double u = -std::cbrt(2 * A + std::sqrt(4 * A * A + 1));
+        double cos_theta = (u - 1) / u;
+
+        // Sample phi
+        double phi = generate_canonical<double>(rng) * 2 * constants::pi;
+
+        // Get the new direction
+        new_dir = from_spherical(cos_theta, phi);
+
+        // Project polarization onto plane perpendicular to new direction
+        new_pol = make_unit_vector(make_orthogonal(inc_pol_, new_dir));
+
+        // Reject rare case of polarization and new direction being
+        // coincident leading to loss of orthogonality
+    } while (CELER_UNLIKELY(!is_soft_orthogonal(new_pol, new_dir)));
+
+    if (!BernoulliDistribution{0.5}(rng))
+    {
+        // Flip direction with 50% probability: there are two polarizations
+        // perpendicular to the new direction and the original polarization
+        new_pol = -new_pol;
+    }
+
+    /*
     Real3 new_dir, new_pol;
     do
     {
@@ -92,6 +123,7 @@ CELER_FUNCTION Interaction RayleighInteractor::operator()(Engine& rng)
         // Accept with the probability of the scattered polarization overlap
         // squared
     } while (reject_angle_(ipow<2>(dot_product(new_pol, inc_pol_)), rng));
+    */
 
     CELER_ENSURE(is_soft_unit_vector(new_dir));
     CELER_ENSURE(is_soft_unit_vector(new_pol));
