@@ -30,7 +30,7 @@ class ResponseTallyTest : public ::celeritas::test::Test
         host.y_grid = UniformGridData::from_bounds({0, 3}, 4);
         host.z_grid = UniformGridData::from_bounds({0, 4}, 5);
         host.time_grid = UniformGridData::from_bounds({0, 10}, 6);
-        host.dims = {2, 2, 3, 4, 5};
+        host.dims = {2, 3, 4, 2, 5};
         ASSERT_TRUE(host);
         params_ = ParamsDataStore<ResponseTallyParamsData>{std::move(host)};
     }
